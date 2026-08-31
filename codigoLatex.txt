@@ -1,0 +1,423 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Predicción de calificaciones
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[letterpaper, 10 pt, conference]{ieeeconf}
+
+\IEEEoverridecommandlockouts
+\overrideIEEEmargins
+
+%-------------------------------------------------------------------------------
+% Paquetes
+%-------------------------------------------------------------------------------
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[spanish, es-nodecimaldot]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{float}
+\usepackage{url}
+
+%-------------------------------------------------------------------------------
+% Título
+%-------------------------------------------------------------------------------
+
+\title{\LARGE \bf
+Predicción de calificaciones a partir de hábitos de estudio y características académicas
+}
+
+%-------------------------------------------------------------------------------
+% Autor
+%-------------------------------------------------------------------------------
+
+\author{
+Manuel Bajos Rivera
+}
+
+%-------------------------------------------------------------------------------
+% Documento
+%-------------------------------------------------------------------------------
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\pagestyle{empty}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ABSTRACT
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{abstract}
+
+En este documento se estudia la posibilidad de predecir la calificación obtenida por un estudiante en un examen final a partir de diferentes datos académicos y hábitos. Para ello se utiliza el conjunto de datos Student Performance \& Study Habits Dataset obtenido del kaggle, compuesto por 1,000 registros y 12 variables relacionadas, como horas de sueño, hábitos académicos, condiciones del entorno y rendimiento previo.
+
+El estudio se enfoca exclusivamente en un problema de regresión, utilizando como variable objetivo la calificación del examen final (final\_exam\_score). Se implementó manualmente un modelo de regresión lineal optimizado mediante el algoritmo de gradiente descendiente. Posteriormente, se realizó una segunda implementación utilizando la librería de Skitlearn, incorporando un procedimiento de partición aleatoria de los datos y escalamiento mediante StandardScaler. Se utilizó un modelo basado en árboles de decisión para esta implementación.
+
+Los resultados muestran que el modelo de gradiente descendiente implementado manualmente obtuvo un $R^2$ de 0.6504 sobre el conjunto de prueba. El modelo de árbol de decisión presentó un desempeño inferior sobre datos no vistos, con un $R^2$ de 0.2007 y un error considerablemente mayor. Los resultados permiten analizar no solamente el desempeño de los modelos, sino también el impacto de las decisiones relacionadas con la preparación de los datos y el procedimiento de entrenamiento.
+
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PROBLEMÁTICA
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Problemática}
+
+El desempeño académico de los estudiantes puede estar relacionado con múltiples factores, entre los cuales se encuentran el tiempo dedicado al estudio, el porcentaje de asistencia, los hábitos de sueño y el rendimiento académico obtenido previamente. La identificación de relaciones entre estas características y el desempeño final puede resultar útil para comprender los patrones presentes en un conjunto de datos educativos.
+
+Dado esta situación,se plantea un problema regresión; cuya meta, es predecir la calificación obtenida por un estudiante en un examen final. La variable objetivo utilizada es final\_exam\_score, mientras que las variables predictoras corresponden a diferentes características académicas y personales.
+
+Las características consideradas son las horas de estudio, el porcentaje de asistencia, las horas de sueño, la existencia de un trabajo de medio tiempo, la calificación previa, el acceso a Internet y la participación en actividades extracurriculares.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% DATOS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Datos}
+El conjunto de datos utilizado corresponde a Student Performance \& Study Habits Dataset, disponible en Kaggle. El conjunto contiene información de 1,000 estudiantes y 12 variables relacionadas con características de los estudiantes, hábitos de estudio y desempeño académico.
+
+La Tabla~\ref{tab:variables} presenta las variables disponibles en el conjunto de datos.
+
+\begin{table}[H]
+\caption{Descripción de las variables del conjunto de datos}
+\label{tab:variables}
+\centering
+\footnotesize
+\begin{tabular}{ll}
+\hline
+\textbf{Variable} & \textbf{Descripción} \\
+\hline
+\texttt{student\_id} & Identificador único \\
+\hline
+\texttt{gender} & Género \\
+\hline
+\texttt{study\_time\_hours} & Horas de estudio al día. \\
+\hline
+\texttt{attendance\_percent} & Porcentaje de asistencia. \\
+\hline
+\texttt{sleep\_hours} & Horas de sueño. \\
+\hline
+\texttt{parental\_education} & Nivel educativo de los padres. \\
+\hline
+\texttt{internet\_access} & Acceso a Internet. \\
+\hline
+\texttt{extracurricular\_activities} & Participación en actividades extracurriculares. \\
+\hline
+\texttt{part\_time\_job} & Trabaja de medio tiempo. \\
+\hline
+\texttt{previous\_grade} & Calificación previa. \\
+\hline
+\texttt{final\_exam\_score} & Puntaje del examen final. \\
+\hline
+\texttt{final\_grade} & Clasificación final de la calificación. \\
+\hline
+\end{tabular}
+\end{table}
+
+Para la predicción se seleccionaron únicamente las variables relevantes para el problema de regresión. La variable student\_id fue descartada debido a que funciona únicamente como identificador y no representa una característica asociada al desempeño académico.
+
+Asimismo, las variables categóricas binarias part\_time\_job, internet\_access y extracurricular\_activities fueron transformadas a valores numéricos. La categoría ``Yes'' fue representada mediante el valor 1, mientras que ``No'' fue representada mediante el valor 0; esto usando la técnica de onehot encoding.
+
+De esta manera, el conjunto final utilizado para el modelo contiene siete variables predictoras y una variable objetivo:
+donde las características (X) corresponden a las horas de estudio, asistencia, horas de sueño, trabajo de medio tiempo, calificación previa, acceso a Internet y actividades extracurriculares.
+
+La variable objetivo se define como:
+
+\begin{equation}
+y = final\_exam\_score.
+\end{equation}
+
+La calificación final presenta un promedio de 83.54 puntos y una desviación estándar de 10.34 puntos, lo que nos ayuda a saber la distribución de nuestro dataset, podemos ir infiriendo algunas cosas, por ejemplo viendo que el promedio artimético es de 83.54 puntos y su desviación es de 10.34 puntos, al menos el 68\% de los alumnos sacaron entre 73.2 y 93.88 lo que significan que la mayoría logro pasar el examen final.
+
+Las horas de estudio presentan un promedio de 3.57 horas, mientras que el porcentaje promedio de asistencia es de 85.09\%. Por otra parte, las horas de sueño presentan un promedio de 6.80 horas y la calificación previa presenta un promedio de 69.74 puntos.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ETL
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{ETL}
+
+El proceso de extracción, transformación y carga fue realizado antes del entrenamiento de los modelos con el objetivo de obtener un conjunto de datos adecuado para la regresión.
+
+Según el sitio de Microsoft el ETL es el proceso de extracción de los datos, transformarlos en el formato que necesitemos para usarlo en el modelo y Subirlo a nuestro servidor o base de datos (Extract Transform Load).
+
+En primer lugar, se cargó el conjunto de datos y se realizó una inspección de sus características. Posteriormente, se eliminó la variable student\_id que para el análisis no la necesitamos.
+
+A continuación, se seleccionaron las siete variables predictoras y la variable final\_exam\_score. Las variables binarias fueron transformadas de categorías textuales a valores numéricos mediante una codificación binaria.
+
+Es importante señalar que para el experimento no se utiliza: gender, parental\_education ni final\_grade como variables predictoras.
+
+La exclusión de final\_grade resulta especialmente importante debido a que representa una clasificación derivada del desempeño final. Utilizar esta variable para predecir final\_exam\_score podría introducir información directamente relacionada con la variable objetivo y producir una estimación optimista pero falsa.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ANALISIS EXPLORATORIO
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Análisis exploratorio}
+
+Antes del entrenamiento se realizó una análisis visual de las relaciones existentes entre las variables predictoras y la calificación final que es nuestra variable a predecir.
+
+La Figura \ref{fig:scatterplots} presenta los diagramas de dispersión correspondientes a las variables numéricas y binarias seleccionadas. Esto nos puede ayudar a ver que dado nuestros datos predictivos, una línea nos puede ayudar a explicar si bien no todos los datos, la mayoría de ellos si se pueden explicar, también podemos ir notando que las variables binarias a lo mejor no son indispensables en nuestro análisis.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{scatterplots.png}
+    \caption{Relación entre las variables predictoras y la calificación del examen final.}
+    \label{fig:scatterplots}
+\end{figure}
+
+En el caso de study\_time\_hours, se observa una tendencia positiva general entre las horas dedicadas al estudio y la calificación final. Los estudiantes que tienen un mayor número de horas de estudio tienden a concentrarse en valores superiores de final\_exam\_score. Sin embargo, la dispersión existente indica que esta variable no explica por sí sola toda la variabilidad observada.
+
+El porcentaje de asistencia también presenta una tendencia positiva. Los estudiantes con un gran porcentaje de asistencia tienden a presentar calificaciones mayores, aunque existen observaciones con valores similares de asistencia y resultados académicos diferentes.
+
+ La relación entre sleep\_hours y la calificación final presenta una dispersión considerable, lo cual dificulta establecer visualmente una relación lineal fuerte entre ambas variables. Esto podría deberse a que la cantidad de horas dormidas no necesariamente refleja la calidad del descanso; es posible que tanto la privación de sueño como el exceso también incidan negativamente en el rendimiento cognitivo. Adicionalmente, se observa una ligera tendencia no lineal, donde tanto muy pocas como demasiadas horas de sueño parecen asociarse con scores algo menores. Explorar esta relación en profundidad excede el alcance de este análisis, pero es una observación relevante para trabajo futuro."
+
+Por otro lado, previous\_grade presenta una relación visualmente más marcada con la calificación del examen final. Los estudiantes con calificaciones previas elevadas tienden a conseguir el mismo resultado nuevamente en final\_exam\_score. Esta característica puede resultar especialmente relevante para la predicción.
+
+Las variables binarias muestran distribuciones de calificaciones en ambas categorías. En particular, los estudiantes con y sin trabajo de medio tiempo presentan un rango amplio de calificaciones, por lo que esta característica no parece explicar de manera aislada el desempeño final.
+
+En conjunto, el análisis exploratorio sugiere que la calificación final depende de una combinación de características y no de una única variable. Esta observación justifica el uso de un modelo multivariable de regresión.
+ 
+La Figura \ref{fig:histogram} presenta los histogramas de las variables que estamos considerando para pasarle al modelo, este gráfico nos ayuda a observar la frecuencia de los datos y también podemos ir viendo si contamos con un outlier que nos pueda sesgar los datos. De aquí podemos ir sacando varios datos interesantes para este estudio.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{histogram.png}
+    \caption{Frecuencia de las las variables predictoras y la calificación del examen final.}
+    \label{fig:histogram}
+\end{figure}
+
+El primero, viendo la parte de study\_time\_hours, podemos observar que la mayoría de estudiantes le dedican un total de casi 4 horas en promedio, donde también una gran parte le dedica 2 horas o menos y muy pocos le dedican más de 6 horas.
+
+En cuanto a attendance\_percent, la distribución está sesgada hacia la derecha: la mayoría de los estudiantes se concentran entre 80\% y 100\% de asistencia, con muy pocos casos por debajo del 60\%. Esto sugiere que el grupo estudiado tiene, en general, buenos niveles de asistencia, y que los valores bajos son la excepción más que la norma.
+
+La variable sleep\_hours presenta una distribución aproximadamente 
+simétrica y con forma de campana, centrada alrededor de 6 a 7 horas de sueño, lo cual es consistente con patrones de sueño típicos reportados en la literatura. Existen pocos casos en los extremos (menos de 4 horas o más de 9 horas), por lo que no se observan outliers preocupantes en esta variable.
+
+Continuando con las variables binarias, part\_time\_job muestra que 
+aproximadamente dos tercios de los estudiantes no tienen un trabajo de medio tiempo, mientras que el resto sí. Por otro lado, internet\_access
+está fuertemente desbalanceada: la gran mayoría de los estudiantes cuentan con acceso a internet, y solo una fracción pequeña no lo tiene. En el caso de extracurricular\_activities muestra que una mayoría de los estudiantes participa en actividades extracurriculares, aunque existe una gran parte que no participa en este tipo de actividades.
+
+La variable previous\_grade presenta una distribución aproximadamente normal, centrada alrededor de 70 puntos, con un rango que va de 30 a 100 puntos. No se observan outliers evidentes que puedan sesgar el análisis.
+
+Finalmente, final\_exam\_score, nuestra variable objetivo, muestra 
+una distribución sesgada, con la mayoría de valores concentrados principalmente entre 80 y 100 puntos, con un pico notable en el valor máximo (100). Esto puede ocasionar problemas al momento de hacer 
+predicciones: dado que la mayoría de los datos se concentran en calificaciones altas, el modelo contará con suficiente información para predecir bien notas de 80 en adelante, pero tendrá un desempeño más pobre prediciendo calificaciones bajas, ya que no cuenta con suficientes datos de entrenamiento en ese rango.
+
+La Figura \ref{fig:correlacion} presenta la matriz de correlación entre las variables consideradas para el modelo y la variable a predecir, 
+final\_exam\_score. Este gráfico nos permite observar qué tan relacionadas linealmente están las variables entre sí, con valores que van de -1 (correlación negativa perfecta) a 1 (correlación positiva perfecta), donde valores cercanos a 0 indican poca o ninguna relación lineal. Lo que más nos interesa aquí es la relación de cada variable predictora con final\_exam\_score, mostrada en la última fila/columna de la matriz.
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.5\textwidth]{matrizCorrelacion.png}
+    \caption{Matriz de correlación de Pearson entre las variables predictoras y la calificación del examen final.}
+    \label{fig:correlacion}
+\end{figure}
+
+Tomando primero study\_time\_hours, observamos una correlación de 0.57 con la calificación final, la más alta entre todas las variables. Esto 
+indica una relación lineal positiva moderada-fuerte: a mayor número de horas de estudio, existe una tendencia consistente de que la calificación final también sea mayor. Sin embargo, esto no implica una relación causal directa ni cuantifica el tamaño del efecto; solamente indica la fuerza de la asociación lineal entre ambas variables.
+
+previous\_grade presenta la segunda correlación más alta (0.41), lo 
+cual es esperado: los estudiantes con mejor desempeño académico previo 
+tienden a mantener un desempeño similar en el examen final.
+
+attendance\_percent (0.26) e internet\_access (0.17) 
+muestran correlaciones positivas más débiles, sugiriendo una relación lineal existente pero modesta con el desempeño en el examen.
+
+sleep\_hours (0.15) y extracurricular\_activities (0.02) 
+presentan correlaciones muy débiles, consistente con lo observado 
+previamente en los diagramas de dispersión, donde estas variables no 
+mostraban una tendencia lineal clara.
+
+Un caso particular es part\_time\_job, con una correlación negativa 
+de -0.15, la única variable con relación negativa respecto a la calificación final. Esto sugiere que tener un trabajo de medio tiempo se asocia ligeramente con calificaciones más bajas, aunque la magnitud de esta relación es débil.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MODELO MANUAL
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Modelos de regresión}
+
+Como primer experimento se implementó manualmente un modelo de regresión lineal utilizando el algoritmo de gradiente descendiente para la parte de optimización. El propósito de esta implementación fue comprender el proceso de aprendizaje de los parámetros sin utilizar directamente una implementación de regresión proporcionada por una biblioteca de aprendizaje automático.
+
+La hipótesis utilizada por el modelo corresponde a una función lineal:
+
+\begin{equation}
+\hat{y}_i =
+\beta_0 +
+\sum_{j=1}^{p}
+\beta_j x_{ij},
+\end{equation}
+
+donde $\beta_0$ representa el término independiente (el valor predicho de $\hat{y}_i$ cuando todas las características son iguales a cero), $p$ representa el número total de características utilizadas por el modelo, $\beta_j$ corresponde al peso asociado a la característica $j$, $x_{ij}$ representa el valor de la característica $j$ para el estudiante $i$, y $\hat{y}_i$ corresponde a la calificación predicha.
+
+Para facilitar el proceso de optimización y evitar problemas de convergencia en el gradiente descendiente, dado que las variables predictoras presentan escalas muy distintas entre sí (por ejemplo, valores de 0 a 10 en algunas variables y de 0 a 100 en otras), las variables predictoras fueron estandarizadas mediante la siguiente transformación:
+
+\begin{equation}
+x' = \frac{x_{ij} - \mu_j}{\sigma_j},
+\end{equation}
+
+donde $x_{ij}$ es el valor original de la característica $j$ para el 
+estudiante $i$, $\mu_j$ es la media de la característica $j$ a través de todos los estudiantes, $\sigma_j$ es la desviación estándar de la 
+característica $j$, y $x'$ corresponde al valor estandarizado resultante, con media 0 y desviación estándar 1.
+
+La función de costo utilizada corresponde a una variante del Error 
+Cuadrático Medio (MSE, por sus siglas en inglés):
+
+\begin{equation}
+J(\theta,b) =
+\frac{1}{2m}
+\sum_{i=1}^{m}
+(\hat{y}_i-y_i)^2,
+\end{equation}
+
+donde $\hat{y}_i$ es la predicción, $y_i$ es el valor real, y $m$ representa el número de observaciones utilizadas durante el entrenamiento.
+
+El gradiente de los parámetros se calcula mediante:
+\begin{equation}
+\frac{\partial J}{\partial \theta}
+=
+\frac{1}{m}
+X^T(\hat{y}-y),
+\end{equation}
+mientras que el gradiente correspondiente al término independiente está dado por:
+\begin{equation}
+\frac{\partial J}{\partial b}
+=
+\frac{1}{m}
+\sum_{i=1}^{m}
+(\hat{y}_i-y_i).
+\end{equation}
+donde $m$ es el número de observaciones utilizadas durante el entrenamiento, $X$ es la matriz de características (de tamaño $m \times p$) y $X^T$ es su transpuesta, utilizada para expresar de forma matricial la suma sobre todas las observaciones $i$ del producto entre el error $(\hat{y}_i - y_i)$ y cada característica $x_{ij}$. 
+
+Los parámetros se actualizan utilizando:
+\begin{equation}
+\theta_{t+1}
+=
+\theta_t
+-
+\alpha
+\frac{\partial J}{\partial \theta},
+\end{equation}
+y
+\begin{equation}
+b_{t+1}
+=
+b_t
+-
+\alpha
+\frac{\partial J}{\partial b},
+\end{equation}
+donde $\alpha$ corresponde a la tasa de aprendizaje que para este experimento fue de 0.01.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CONVERGENCIA
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Convergencia del modelo de regresión multilineal}
+
+Durante el entrenamiento se almacenaron los valores de la función de costo y del coeficiente de determinación $R^2$ en cada época. Estas variables permiten observar el comportamiento del algoritmo durante el proceso de optimización.
+
+El comportamiento esperado es una disminución progresiva de la función de costo acompañada por un incremento del $R^2$. Una vez que el modelo alcanza una región estable, las mejoras adicionales tienden a ser menores.
+
+En este experimento, el algoritmo alcanzó el máximo de 5,000 épocas sin llegar al objetivo de $R^2=0.95$. El resultado obtenido sobre el conjunto de entrenamiento fue:
+
+\begin{equation}
+R^2_{\mathrm{train}} \approx 0.666.
+\end{equation}
+
+\begin{figure}[b]
+    \centering
+    \includegraphics[width=0.5\textwidth]{R2.png}
+    \caption{Matriz de correlación de Pearson entre las variables predictoras y la calificación del examen final.}
+    \label{fig:R2}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.5\textwidth]{R^2.png}
+    \caption{Matriz de correlación de Pearson entre las variables predictoras y la calificación del examen final.}
+    \label{fig:Costo}
+\end{figure}
+
+Este resultado indica que el modelo lineal implementado manualmente logra explicar aproximadamente el 66.6\% de la variabilidad de la calificación final dentro del conjunto utilizado para el entrenamiento.
+
+\subsection{Cambio de modelo}
+
+Como modelo adicional se implementó un DecisionTreeRegressor, utilizando exactamente el mismo conjunto de entrenamiento y de prueba que el modelo manual (los primeros 800 registros para entrenamiento y los 200 restantes para prueba), así como el mismo procedimiento de estandarización aplicado mediante la función scale() definida de forma manual. De esta manera, la comparación entre ambos modelos se realiza bajo condiciones de datos idénticas, y las diferencias en el desempeño observado pueden atribuirse principalmente al algoritmo utilizado y no a diferencias en la partición o el escalamiento de los datos.
+
+Este modelo permite representar relaciones no lineales mediante una estructura de decisiones basada en particiones sucesivas del espacio de características.
+
+El árbol obtuvo un desempeño perfecto sobre el conjunto de entrenamiento, con:
+
+\begin{equation}
+R^2_{\mathrm{train}} = 1.00
+\end{equation}
+
+y un error cuadrático medio prácticamente igual a cero.
+
+Sin embargo, este comportamiento no se mantuvo sobre el conjunto de prueba. El modelo obtuvo un MSE de 0.48 en los datos de prueba y un $R^2$ de 0.23.
+
+La diferencia entre el desempeño de entrenamiento y prueba constituye una señal clara de sobreajuste (overfitting). El árbol memoriza las observaciones utilizadas durante el entrenamiento, pero su capacidad de generalizar es menor sobre observaciones que no fueron utilizadas para construir el modelo.
+
+Este resultado también permite observar que un modelo con un $R^2$ de 1.0 sobre entrenamiento no necesariamente es el modelo más adecuado. Para evaluar un modelo predictivo es necesario analizar principalmente su desempeño sobre datos no utilizados durante el entrenamiento.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% ANALISIS DEL CAMBIO
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Análisis del cambio realizado}
+
+La comparación entre las dos implementaciones permite identificar varias diferencias metodológicas, más allá de únicamente el algoritmo utilizado.
+
+El modelo manual, basado en gradiente descendiente, proporciona un mayor control y conocimiento sobre lo que esta pasando, debido a que fueron programadas manualmente. Esto permite observar directamente el proceso mediante el cual el algoritmo minimiza la función de pérdida.
+
+Por su parte, el DecisionTreeRegressor simplifica considerablemente el proceso de entrenamiento del modelo al utilizar una implementación optimizada proporcionada por Scikit-learn, sin necesidad de definir manualmente ninguna función de optimización.
+
+A diferencia del modelo manual, cuya hipótesis asume una relación estrictamente lineal entre las características y la variable objetivo, el árbol de decisión es capaz de representar relaciones no lineales mediante particiones sucesivas del espacio de características. Sin embargo, esta mayor flexibilidad también incrementa el riesgo de sobreajuste, tal como se observó en los resultados obtenidos.
+
+Es importante señalar que ambos modelos fueron entrenados y evaluados utilizando exactamente el mismo conjunto de entrenamiento, el mismo conjunto de prueba y el mismo procedimiento de escalamiento. Por lo tanto, la diferencia de desempeño observada puede atribuirse directamente a la naturaleza del algoritmo utilizado, y no a diferencias en la preparación de los datos.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CONCLUSIONES
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Resultados}
+
+En este trabajo se estudió el problema de predicción de la calificación obtenida en un examen final a partir de características relacionadas con los hábitos de estudio y el desempeño académico previo de los estudiantes.
+
+Se implementó inicialmente un modelo de regresión lineal mediante gradiente descendiente de forma manual. Esta implementación permitió controlar directamente la función de hipótesis, la función de costo, el cálculo de los gradientes y la actualización de los parámetros.
+
+El modelo manual alcanzó un $R^2$ de aproximadamente 0.666 sobre el conjunto de entrenamiento después de 5,000 épocas. Al evaluar sus predicciones sobre el conjunto de prueba, obtuvo un MSE de 32.50, un RMSE de 5.70, un MAE de 4.54 y un $R^2$ de 0.6504.
+
+Como modelo adicional se implementó un DecisionTreeRegressor, utilizando exactamente el mismo conjunto de entrenamiento, conjunto de prueba y procedimiento de escalamiento que el modelo manual. Este modelo alcanzó un $R^2$ de 1.00 sobre los datos de entrenamiento, pero obtuvo solamente un MSE de 77.92 y un $R^2$ de 0.23 sobre el conjunto de prueba. Esta diferencia evidencia un problema de sobreajuste y demuestra la importancia de evaluar los modelos utilizando datos no vistos durante el entrenamiento.
+
+En conclusión, el experimento muestra que la implementación manual de un algoritmo de regresión lineal permite comprender con mayor profundidad el proceso de optimización, y en este caso particular obtuvo un mejor desempeño sobre datos no vistos que un modelo más flexible como el árbol de decisión. Esto ilustra que un modelo con mayor capacidad de representación no necesariamente generaliza mejor, especialmente cuando no se aplican técnicas adicionales para controlar su complejidad.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% REFERENCIAS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{thebibliography}{99}
+
+\bibitem{dataset}
+H. Patil, ``Student Performance \& Study Habits Dataset,'' Kaggle.
+
+\bibitem{Microsoft}
+C. Siemens, ``Extract, transform, and load (ETL),'' Microsoft Learn, Azure Architecture Center. 
+[Online]. Available: 
+\url{https://learn.microsoft.com/en-us/azure/architecture/data-guide/relational-data/etl}
+[Accessed: Aug. 30, 2026].
+
+\bibitem{Majdalani2024}
+Majdalani, J. (2024, septiembre 16).
+\textit{¿Es malo dormir más de 8 horas? Esto dicen los expertos}.
+El Independiente.
+\url{https://www.elindependiente.com/tendencias/2024/09/16/es-malo-dormir-mas-8-horas-expertos/}
+
+\end{thebibliography}
+
+\end{document}
