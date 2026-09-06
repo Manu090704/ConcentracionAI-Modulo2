@@ -56,9 +56,17 @@ Manuel Bajos Rivera
 
 En este documento se estudia la posibilidad de predecir la calificación obtenida por un estudiante en un examen final a partir de diferentes datos académicos y hábitos. Para ello se utiliza el conjunto de datos Student Performance \& Study Habits Dataset obtenido del kaggle, compuesto por 1,000 registros y 12 variables relacionadas, como horas de sueño, hábitos académicos, condiciones del entorno y rendimiento previo.
 
-El estudio se enfoca exclusivamente en un problema de regresión, utilizando como variable objetivo la calificación del examen final (final\_exam\_score). Se implementó manualmente un modelo de regresión lineal optimizado mediante el algoritmo de gradiente descendiente. Posteriormente, se realizó una segunda implementación utilizando la librería de Skitlearn, incorporando un procedimiento de partición aleatoria de los datos y escalamiento mediante StandardScaler. Se utilizó un modelo basado en árboles de decisión para esta implementación.
+El estudio se enfoca exclusivamente en un problema de regresión, 
+utilizando como variable a predecir la calificación del examen final 
+(final\_exam\_score). Se implementó manualmente un modelo de regresión 
+lineal optimizado mediante el algoritmo de gradiente descendiente. 
+Posteriormente, se realizaron dos implementaciones adicionales utilizando la librería de Scikit-learn: un DecisionTreeRegressor y un 
+RandomForestRegressor, ambos evaluados bajo el mismo procedimiento de 
+partición aleatoria de los datos en conjuntos de entrenamiento, validación y prueba, y el mismo esquema de estandarización.
 
-Los resultados muestran que el modelo de gradiente descendiente implementado manualmente obtuvo un $R^2$ de 0.6504 sobre el conjunto de prueba. El modelo de árbol de decisión presentó un desempeño inferior sobre datos no vistos, con un $R^2$ de 0.2007 y un error considerablemente mayor. Los resultados permiten analizar no solamente el desempeño de los modelos, sino también el impacto de las decisiones relacionadas con la preparación de los datos y el procedimiento de entrenamiento.
+Los resultados muestran que el modelo de gradiente descendiente 
+implementado manualmente obtuvo un $R^2$ de 0.6455 sobre el conjunto de 
+prueba, el desempeño más alto entre los tres modelos evaluados. El árbol de decisión, entrenado sin restricción sobre el número mínimo de observaciones por hoja, alcanzó un $R^2$ de 1.00 sobre el conjunto de entrenamiento pero apenas 0.1705 sobre el conjunto de prueba, evidenciando un caso claro de overfitting. El Random Forest, al combinar 500 árboles mediante un esquema de ensamble, mitigó parcialmente este problema, alcanzando un $R^2$ de 0.3451 sobre el conjunto de prueba, superior al del árbol individual pero aún por debajo del modelo lineal. Los resultados permiten analizar no solamente el desempeño de los modelos, sino también el impacto de las decisiones relacionadas con la preparación de los datos, la partición aleatoria y el control de la complejidad sobre la capacidad de generalización de cada algoritmo.
 
 \end{abstract}
 
@@ -119,7 +127,7 @@ La Tabla~\ref{tab:variables} presenta las variables disponibles en el conjunto d
 
 Para la predicción se seleccionaron únicamente las variables relevantes para el problema de regresión. La variable student\_id fue descartada debido a que funciona únicamente como identificador y no representa una característica asociada al desempeño académico.
 
-Asimismo, las variables categóricas binarias part\_time\_job, internet\_access y extracurricular\_activities fueron transformadas a valores numéricos. La categoría ``Yes'' fue representada mediante el valor 1, mientras que ``No'' fue representada mediante el valor 0; esto usando la técnica de onehot encoding.
+Asimismo, las variables categóricas binarias part\_time\_job, internet\_access y extracurricular\_activities fueron transformadas a valores numéricos. La categoría ``Yes'' fue representada mediante el valor 1, mientras que ``No'' fue representada mediante el valor 0; esto usando una técnica parecida al one hot encoding pero para evitar crear otra columna únicamente se reemplazo.
 
 De esta manera, el conjunto final utilizado para el modelo contiene siete variables predictoras y una variable objetivo:
 donde las características (X) corresponden a las horas de estudio, asistencia, horas de sueño, trabajo de medio tiempo, calificación previa, acceso a Internet y actividades extracurriculares.
@@ -151,6 +159,13 @@ A continuación, se seleccionaron las siete variables predictoras y la variable 
 Es importante señalar que para el experimento no se utiliza: gender, parental\_education ni final\_grade como variables predictoras.
 
 La exclusión de final\_grade resulta especialmente importante debido a que representa una clasificación derivada del desempeño final. Utilizar esta variable para predecir final\_exam\_score podría introducir información directamente relacionada con la variable objetivo y producir una estimación optimista pero falsa.
+
+Con el objetivo de evitar sesgos derivados del orden original de los 
+registros en el archivo (ya sea porque vienen ordenados de forma ascendente o descendente), la partición del conjunto de datos en 
+entrenamiento, validación y prueba se realizó mediante un muestreo 
+aleatorio. Para ello se utilizó el método \texttt{sample(frac=1, 
+random\_state=42)} de Pandas, que reordena aleatoriamente la totalidad de las instancias del conjunto de datos, con una semilla fija para 
+garantizar que se pueda repetir los resultados. Se dividió el dataset en las siguientes proporciones: 60\% de entrenamiento, 20\% de validación y 20\% de prueba.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ANALISIS EXPLORATORIO
@@ -313,6 +328,16 @@ b_t
 \end{equation}
 donde $\alpha$ corresponde a la tasa de aprendizaje que para este experimento fue de 0.01.
 
+\subsection{Partición de los datos}
+
+Con el objetivo de evaluar de manera más rigurosa la capacidad de 
+generalización de los modelos, el conjunto de datos fue dividido en tres subconjuntos antes mencionados: entrenamiento, validación y prueba, compuestos por 600, 200 y 200 observaciones respectivamente.
+
+El conjunto de entrenamiento fue utilizado exclusivamente para ajustar los parámetros de cada modelo (los coeficientes $\theta$ y $b$ en el caso de la regresión lineal, y la estructura del árbol en los modelos basados en árboles). El conjunto de validación se reservó para monitorear el desempeño del modelo sobre datos no utilizados en el entrenamiento sin comprometer la evaluación final. Finalmente, el conjunto de prueba se mantuvo completamente aislado del proceso de entrenamiento y selección de modelo, utilizándose únicamente 
+para reportar una estimación final del desempeño.
+
+La estandarización de las variables (media 0, desviación estándar 1) se calculó en cada partición por separado para evitar fugas de datos.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CONVERGENCIA
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -332,26 +357,83 @@ R^2_{\mathrm{train}} \approx 0.666.
 \begin{figure}[b]
     \centering
     \includegraphics[width=0.5\textwidth]{R2.png}
-    \caption{Matriz de correlación de Pearson entre las variables predictoras y la calificación del examen final.}
+    \caption{Evolución del $R^2$ durante las épocas de entrenamiento del gradiente descendiente.}
     \label{fig:R2}
 \end{figure}
 
 \begin{figure}[t]
     \centering
     \includegraphics[width=0.5\textwidth]{R^2.png}
-    \caption{Matriz de correlación de Pearson entre las variables predictoras y la calificación del examen final.}
+    \caption{Convergencia de la función de costo (MSE) durante las épocas de entrenamiento del gradiente descendiente.}
     \label{fig:Costo}
 \end{figure}
 
 Este resultado indica que el modelo lineal implementado manualmente logra explicar aproximadamente el 66.6\% de la variabilidad de la calificación final dentro del conjunto utilizado para el entrenamiento.
 
-\subsection{Cambio de modelo}
+\subsection{Cambio de modelos}
 
-Como modelo adicional se implementó un DecisionTreeRegressor, utilizando exactamente el mismo conjunto de entrenamiento y de prueba que el modelo manual (los primeros 800 registros para entrenamiento y los 200 restantes para prueba), así como el mismo procedimiento de estandarización aplicado mediante la función scale() definida de forma manual. De esta manera, la comparación entre ambos modelos se realiza bajo condiciones de datos idénticas, y las diferencias en el desempeño observado pueden atribuirse principalmente al algoritmo utilizado y no a diferencias en la partición o el escalamiento de los datos.
+Como modelos adicionales se implementaron un DecisionTreeRegressor y 
+posteriormente un RandomForestRegressor, utilizando exactamente el mismo conjunto de entrenamiento, validación y prueba que el modelo manual (los primeros 600 registros para entrenamiento, 200 para validación y los 200 restantes para prueba), ya estandarizados. De esta manera, la comparación entre los tres modelos se realiza bajo condiciones de datos idénticas.
 
-Este modelo permite representar relaciones no lineales mediante una estructura de decisiones basada en particiones sucesivas del espacio de características.
+Ambos modelos permiten representar relaciones no lineales mediante una 
+estructura de decisiones basada en particiones sucesivas del espacio de 
+características; el Random Forest, además, combina múltiples árboles 
+mediante un esquema de ensamble con el objetivo de reducir la varianza 
+respecto a un único árbol de decisión.
 
-El árbol obtuvo un desempeño perfecto sobre el conjunto de entrenamiento, con:
+\subsubsection{Árbol de decisión}
+
+\paragraph{Fundamento Matemático sobre Árbol de decisión de regresión}
+
+A diferencia del modelo de regresión lineal, cuya hipótesis asume una 
+relación aditiva y lineal entre las variables predictoras y la variable 
+objetivo, el árbol de decisión construye la predicción mediante una 
+partición recursiva del espacio de características en regiones disjuntas.
+
+Sea $R$ una región del espacio de características que contiene un 
+subconjunto de observaciones de entrenamiento. Dado un par formado por una variable predictora $x_j$ y un umbral de corte $s$, el algoritmo divide $R$ en dos regiones:
+
+\begin{equation}
+R_1(j,s) = \{ x \mid x_j \leq s \}, \qquad
+R_2(j,s) = \{ x \mid x_j > s \}.
+\end{equation}
+
+Para cada posible par $(j,s)$, el algoritmo calcula el valor promedio de la variable objetivo dentro de cada región resultante:
+
+\begin{equation}
+\bar{y}_{R_1} = \frac{1}{|R_1|}\sum_{i:\,x_i \in R_1} y_i, \qquad
+\bar{y}_{R_2} = \frac{1}{|R_2|}\sum_{i:\,x_i \in R_2} y_i,
+\end{equation}
+
+y selecciona el par $(j,s)$ que minimiza la suma del error cuadrático 
+dentro de ambas regiones:
+
+\begin{equation}
+\min_{j,\,s} \left[
+\sum_{i:\,x_i \in R_1(j,s)} (y_i - \bar{y}_{R_1})^2
++
+\sum_{i:\,x_i \in R_2(j,s)} (y_i - \bar{y}_{R_2})^2
+\right].
+\label{eq:tree_split}
+\end{equation}
+
+Este procedimiento se aplica de manera recursiva sobre cada región 
+resultante, generando así una estructura jerárquica de particiones. En esta implementación, la recursión se detiene únicamente al alcanzar una 
+profundidad máxima de 20 niveles, sin imponer una restricción sobre el número mínimo de observaciones por hoja, lo cual permite al árbol continuar dividiendo el espacio prácticamente hasta memorizar cada observación individual.
+
+Una vez construido el árbol, la predicción para una nueva observación $x$ se obtiene identificando la hoja $R_m$ a la que pertenece dicha 
+observación, tras recorrer las condiciones de división desde la raíz, y 
+asignando como predicción el promedio de la variable objetivo de las 
+observaciones de entrenamiento contenidas en esa hoja:
+
+\begin{equation}
+\hat{y} = \bar{y}_{R_m} = \frac{1}{|R_m|}\sum_{i:\,x_i \in R_m} y_i.
+\end{equation}
+
+Cabe señalar que, al tratarse de un problema de regresión, el criterio de división utilizado no corresponde a medidas de impureza basadas en teoría de la información (como la entropía o la ganancia de información), las cuales son propias de árboles de clasificación donde la variable objetivo es categórica. Al ser final\_exam\_score una variable continua, el criterio de división utilizado corresponde a la minimización del error cuadrático.
+
+\paragraph{Implementación}
+El árbol de decisión, configurado con una profundidad máxima de 20 niveles y sin restricción sobre el número mínimo de observaciones por hoja, obtuvo un desempeño perfecto sobre el conjunto de entrenamiento, con:
 
 \begin{equation}
 R^2_{\mathrm{train}} = 1.00
@@ -359,27 +441,91 @@ R^2_{\mathrm{train}} = 1.00
 
 y un error cuadrático medio prácticamente igual a cero.
 
-Sin embargo, este comportamiento no se mantuvo sobre el conjunto de prueba. El modelo obtuvo un MSE de 0.48 en los datos de prueba y un $R^2$ de 0.23.
+Sin embargo, este comportamiento no se mantuvo sobre los conjuntos de 
+validación y prueba. El modelo obtuvo un $R^2$ de $-0.0025$ en validación y de 0.1705 en prueba, con un MSE de 89.67 y 85.20 respectivamente.
 
-La diferencia entre el desempeño de entrenamiento y prueba constituye una señal clara de sobreajuste (overfitting). El árbol memoriza las observaciones utilizadas durante el entrenamiento, pero su capacidad de generalizar es menor sobre observaciones que no fueron utilizadas para construir el modelo.
+La diferencia entre el desempeño de entrenamiento y el de 
+validación/prueba constituye una señal clara de overfitting. Al no imponer un mínimo de observaciones por hoja, el árbol continuó particionando el espacio de características hasta memorizar prácticamente cada observación individual del conjunto de 
+entrenamiento, perdiendo con ello su capacidad de generalizar hacia 
+observaciones que no fueron utilizadas para construir el modelo.
 
-Este resultado también permite observar que un modelo con un $R^2$ de 1.0 sobre entrenamiento no necesariamente es el modelo más adecuado. Para evaluar un modelo predictivo es necesario analizar principalmente su desempeño sobre datos no utilizados durante el entrenamiento.
+\subsubsection{Random Forest}
 
+\paragraph{Fundamento Matemático de Random Forest}
+
+Un bosque aleatorio (random forest) es un método de ensamble que 
+combina las predicciones de múltiples árboles de decisión, entrenados de forma independiente, con el objetivo de reducir la varianza del modelo sin incrementar significativamente su sesgo.
+
+La construcción de cada árbol $b = 1, \dots, B$ que conforma el bosque se realiza mediante dos fuentes de aleatoriedad:
+
+\begin{enumerate}
+    \item Bootstrap aggregating (bagging): Cada árbol se entrena 
+    utilizando una muestra obtenida mediante remuestreo con reemplazo del conjunto de entrenamiento original, del mismo tamaño que este último. Como consecuencia, cada árbol observa un subconjunto ligeramente distinto de las observaciones disponibles.
+    
+    \item Selección aleatoria de características: En cada nodo, en 
+    lugar de evaluar todas las variables predictoras disponibles para 
+    encontrar la mejor división, el algoritmo considera únicamente un 
+    subconjunto aleatorio de ellas. Esto reduce la correlación entre los árboles individuales del bosque.
+\end{enumerate}
+
+Cada árbol $T_b$ se construye siguiendo exactamente el mismo criterio de minimización de error cuadrático. La predicción final del bosque para una observación $x$ se obtiene promediando las predicciones individuales de los $B$ árboles:
+
+\begin{equation}
+\hat{y}(x) = \frac{1}{B}\sum_{b=1}^{B} T_b(x).
+\label{eq:rf_average}
+\end{equation}
+
+Este promedio es el mecanismo mediante el cual el bosque aleatorio reduce la varianza respecto a un único árbol. Formalmente, si cada árbol $T_b(x)$ tuviera varianza $\sigma^2$ y las predicciones fueran independientes entre sí, la varianza del promedio sería:
+
+\begin{equation}
+\mathrm{Var}\left(\frac{1}{B}\sum_{b=1}^{B} T_b(x)\right) = \frac{\sigma^2}{B}.
+\end{equation}
+
+En la práctica, los árboles no son completamente independientes (ya que 
+comparten el mismo conjunto de datos original y, en algunos casos, las 
+mismas variables candidatas en ciertas divisiones), por lo que la reducción real de varianza es menor a la ideal, pero sigue siendo sustancial cuando $B$ es grande, como en este caso ($B=500$).
+
+En este experimento, el bosque fue configurado con $B=500$ árboles 
+(n\_estimators) y un máximo de 200 nodos hoja por árbol (max\_leaf\_nodes). Esta última restricción limita la profundidad 
+efectiva de cada árbol individual del bosque, aunque, como se observa más adelante, no es suficientemente restrictiva para eliminar por completo el sobreajuste de cada árbol individual.
+
+\paragraph{Implementación}
+El Random Forest, configurado con 500 árboles y un máximo de 200 nodos hoja por árbol, obtuvo los siguientes resultados:
+
+\begin{equation}
+R^2_{\mathrm{train}} = 0.9173, \qquad R^2_{\mathrm{val}} = 0.0601, \qquad
+R^2_{\mathrm{test}} = 0.3451
+\end{equation}
+
+con un MSE de 6.65, 49.01 y 41.50 respectivamente.
+
+Al igual que el árbol individual, el Random Forest presenta una brecha 
+considerable entre su desempeño de entrenamiento y el de validación/prueba, lo cual indica que también incurre en Overfitting. Sin embargo, este overfitting es menos severo que el observado en el árbol individual: el $R^2$ de entrenamiento no llega a ser perfecto (0.9173 en lugar de 1.00) y, más importante aún, el $R^2$ de prueba (0.3451) duplica prácticamente al obtenido por el árbol individual (0.1705). Esta mejora es consistente con el mecanismo de ensamble del bosque aleatorio: al promediar las predicciones de 500 árboles entrenados sobre distintas muestras (aplicando Bootstrapping), la varianza asociada a las particularidades de un único árbol se reduce considerablemente, aunque no se elimina por completo, dado que cada árbol individual del bosque conserva una capacidad considerable para ajustarse al ruido de su propia muestra de entrenamiento.
+
+Este resultado también permite observar que un modelo con un $R^2$ de 1.0 sobre entrenamiento no necesariamente es el modelo más adecuado, y que combinar múltiples modelos mediante un ensamble puede mitigar, aunque no resolver por completo, el problema de overfitting. Para evaluar un modelo predictivo es necesario analizar principalmente su desempeño sobre datos no utilizados durante el entrenamiento.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % ANALISIS DEL CAMBIO
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \subsection{Análisis del cambio realizado}
 
-La comparación entre las dos implementaciones permite identificar varias diferencias metodológicas, más allá de únicamente el algoritmo utilizado.
+La comparación entre las tres implementaciones permite identificar varias diferencias metodológicas, más allá de únicamente el algoritmo utilizado.
 
-El modelo manual, basado en gradiente descendiente, proporciona un mayor control y conocimiento sobre lo que esta pasando, debido a que fueron programadas manualmente. Esto permite observar directamente el proceso mediante el cual el algoritmo minimiza la función de pérdida.
+El modelo manual, basado en gradiente descendiente, proporciona un mayor control y conocimiento sobre lo que está pasando, debido a que fue programado manualmente. Esto permite observar directamente el proceso mediante el cual el algoritmo minimiza la función de pérdida.
 
-Por su parte, el DecisionTreeRegressor simplifica considerablemente el proceso de entrenamiento del modelo al utilizar una implementación optimizada proporcionada por Scikit-learn, sin necesidad de definir manualmente ninguna función de optimización.
+Por su parte, tanto el DecisionTreeRegressor como el RandomForestRegressor simplifican considerablemente el proceso de entrenamiento del modelo al utilizar implementaciones optimizadas proporcionadas por Scikit-learn, sin necesidad de definir manualmente ninguna función de optimización.
 
-A diferencia del modelo manual, cuya hipótesis asume una relación estrictamente lineal entre las características y la variable objetivo, el árbol de decisión es capaz de representar relaciones no lineales mediante particiones sucesivas del espacio de características. Sin embargo, esta mayor flexibilidad también incrementa el riesgo de sobreajuste, tal como se observó en los resultados obtenidos.
+A diferencia del modelo manual, cuya hipótesis asume una relación 
+estrictamente lineal entre las características y la variable objetivo, 
+ambos modelos basados en árboles son capaces de representar relaciones no lineales mediante particiones sucesivas del espacio de características. Sin embargo, esta mayor flexibilidad también incrementa el riesgo de sobreajuste, tal como se observó de forma extrema en el árbol de decisión individual y de forma más moderada en el Random Forest.
 
-Es importante señalar que ambos modelos fueron entrenados y evaluados utilizando exactamente el mismo conjunto de entrenamiento, el mismo conjunto de prueba y el mismo procedimiento de escalamiento. Por lo tanto, la diferencia de desempeño observada puede atribuirse directamente a la naturaleza del algoritmo utilizado, y no a diferencias en la preparación de los datos.
+La diferencia de desempeño entre el árbol individual y el Random Forest 
+ilustra además el valor de los métodos de ensamble: al combinar múltiples árboles entrenados sobre distintas muestras y promediar sus predicciones, el Random Forest logra reducir la varianza del modelo sin modificar sustancialmente su sesgo, obteniendo un desempeño intermedio entre el árbol individual (más flexible pero más inestable) y el 
+modelo lineal (más simple pero más estable).
+
+Es importante señalar que los tres modelos fueron entrenados y evaluados utilizando exactamente el mismo conjunto de entrenamiento, el mismo conjunto de validación, el mismo conjunto de prueba y el mismo 
+procedimiento de escalamiento. Por lo tanto, la diferencia de desempeño 
+observada puede atribuirse directamente a la naturaleza de cada algoritmo y a sus respectivos hiperparámetros, y no a diferencias en la preparación de los datos.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % CONCLUSIONES
@@ -387,15 +533,40 @@ Es importante señalar que ambos modelos fueron entrenados y evaluados utilizand
 
 \section{Resultados}
 
-En este trabajo se estudió el problema de predicción de la calificación obtenida en un examen final a partir de características relacionadas con los hábitos de estudio y el desempeño académico previo de los estudiantes.
+En este trabajo se estudió el problema de predicción de la calificación 
+obtenida en un examen final a partir de características relacionadas con los hábitos de estudio y el desempeño académico previo de los estudiantes.
 
-Se implementó inicialmente un modelo de regresión lineal mediante gradiente descendiente de forma manual. Esta implementación permitió controlar directamente la función de hipótesis, la función de costo, el cálculo de los gradientes y la actualización de los parámetros.
+Se implementó inicialmente un modelo de regresión lineal mediante 
+gradiente descendiente de forma manual. Esta implementación permitió 
+controlar directamente la función de hipótesis, la función de costo, el 
+cálculo de los gradientes y la actualización de los parámetros. El modelo manual alcanzó un $R^2$ de aproximadamente 0.6656 sobre el conjunto de entrenamiento después de 5,000 épocas. Al evaluar sus predicciones sobre el conjunto de prueba, obtuvo un MSE de 35.60 y un $R^2$ de 0.6455, resultado consistente con el obtenido sobre el conjunto de validación ($R^2 = 0.6320$).
 
-El modelo manual alcanzó un $R^2$ de aproximadamente 0.666 sobre el conjunto de entrenamiento después de 5,000 épocas. Al evaluar sus predicciones sobre el conjunto de prueba, obtuvo un MSE de 32.50, un RMSE de 5.70, un MAE de 4.54 y un $R^2$ de 0.6504.
+Como segundo modelo se implementó un DecisionTreeRegressor, utilizando 
+exactamente el mismo conjunto de entrenamiento, validación, prueba y 
+procedimiento de escalamiento que el modelo manual. Este modelo alcanzó un $R^2$ de 1.00 sobre los datos de entrenamiento, pero obtuvo un $R^2$ de apenas $-0.0025$ sobre el conjunto de validación y de 0.1705 sobre el conjunto de prueba. Esta diferencia evidencia un problema severo de 
+overfitting y demuestra la importancia de evaluar los modelos utilizando datos no vistos durante el entrenamiento.
 
-Como modelo adicional se implementó un DecisionTreeRegressor, utilizando exactamente el mismo conjunto de entrenamiento, conjunto de prueba y procedimiento de escalamiento que el modelo manual. Este modelo alcanzó un $R^2$ de 1.00 sobre los datos de entrenamiento, pero obtuvo solamente un MSE de 77.92 y un $R^2$ de 0.23 sobre el conjunto de prueba. Esta diferencia evidencia un problema de sobreajuste y demuestra la importancia de evaluar los modelos utilizando datos no vistos durante el entrenamiento.
+Como tercer modelo se implementó un RandomForestRegressor compuesto por 500 árboles, bajo las mismas condiciones de datos que los modelos anteriores. Este modelo alcanzó un $R^2$ de 0.9173 sobre el conjunto de entrenamiento, 0.0601 sobre validación y 0.3451 sobre prueba. Si bien el Random Forest también presenta evidencia de overfitting, su desempeño sobre datos no vistos resultó superior al del árbol de decisión individual, lo cual confirma que el mecanismo de ensamble logra reducir parcialmente la varianza del modelo.
 
-En conclusión, el experimento muestra que la implementación manual de un algoritmo de regresión lineal permite comprender con mayor profundidad el proceso de optimización, y en este caso particular obtuvo un mejor desempeño sobre datos no vistos que un modelo más flexible como el árbol de decisión. Esto ilustra que un modelo con mayor capacidad de representación no necesariamente generaliza mejor, especialmente cuando no se aplican técnicas adicionales para controlar su complejidad.
+La Tabla~\ref{tab:resumen_final} resume el $R^2$ obtenido por los tres 
+modelos sobre el conjunto de prueba.
+
+\begin{table}[H]
+\caption{Resumen del $R^2$ de prueba obtenido por cada modelo}
+\label{tab:resumen_final}
+\centering
+\begin{tabular}{lc}
+\hline
+\textbf{Modelo} & \textbf{$R^2$ prueba} \\
+\hline
+Regresión lineal (manual, gradiente descendiente) & 0.6455 \\
+Árbol de decisión (Scikit-learn)                   & 0.1705 \\
+Random Forest (Scikit-learn, 500 árboles)          & 0.3451 \\
+\hline
+\end{tabular}
+\end{table}
+
+En conclusión, el experimento muestra que la implementación manual de un algoritmo de regresión lineal permite comprender con mayor profundidad el proceso de optimización, y en este caso particular obtuvo el mejor desempeño sobre datos no vistos entre los tres modelos evaluados. Los modelos basados en árboles, si bien poseen una mayor capacidad para representar relaciones no lineales, resultaron más propensos al sobreajuste bajo la configuración de hiperparámetros utilizada; el Random Forest logró mitigar parcialmente este problema respecto al árbol individual, pero no logró superar al modelo lineal. Esto ilustra que un modelo con mayor capacidad de representación no necesariamente generaliza mejor, dependiendo de los patrones de los datos un modelo complejo puede no ser la mejor solución al problema.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % REFERENCIAS
