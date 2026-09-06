@@ -1,5 +1,27 @@
 # ConcentracionAI-Modulo2
 
+Proyecto de aprendizaje automático para predecir la calificación final (`final_exam_score`) de estudiantes a partir de sus hábitos de estudio. El análisis incluye exploración de datos y la comparación de una regresión lineal implementada manualmente, un árbol de decisión y un bosque aleatorio.
+
+## Datos y resultados
+
+El script descarga automáticamente el dataset **Student Performance and Study Habits Dataset** desde Kaggle mediante `kagglehub`; no es necesario descargar archivos de datos manualmente. Durante la ejecución se muestran estadísticas descriptivas, gráficas exploratorias y métricas MSE y R² para los conjuntos de entrenamiento, validación y prueba.
+
+> **Nota:**
+> El dataset se descarga desde Kaggle durante la ejecución, por lo que se necesita
+> conexión a Internet. También es posible descargarlo manualmente desde la
+> [página del dataset en Kaggle](https://www.kaggle.com/datasets/harshadapatil31/student-performance-and-study-habits-dataset/data)
+> para conservar una copia local.
+>
+> Sin embargo, para ejecutar el proyecto completamente sin conexión es necesario
+> modificar la sección de carga de datos del script y reemplazar la descarga con
+> KaggleHub por una lectura del archivo local, por ejemplo:
+>
+> ```python
+> df = pd.read_csv("student_performance_dataset.csv")
+> ```
+>
+> Coloca `student_performance_dataset.csv` en la carpeta principal del proyecto.
+
 ## Requisitos previos
 - Tener Python 3.9+ instalado ([python.org](https://www.python.org/downloads/))
 - Verifica tu versión con:
@@ -53,24 +75,13 @@ Sabrás que el entorno está activo porque verás `(venv)` al inicio de la líne
 
 ### 4. Instalar dependencias
 
-Con el entorno virtual activado, instala todas las dependencias:
+Con el entorno virtual activado, instala las dependencias definidas en `requirements.txt`:
 
 ```bash
-pip install matplotlib scikit-learn numpy seaborn kagglehub pandas
+pip install -r requirements.txt
 ```
 
-O instalarlas una por una:
-
-| Librería | Comando |
-|---|---|
-| Matplotlib | `pip install matplotlib` |
-| Scikit-learn | `pip install scikit-learn` |
-| NumPy | `pip install numpy` |
-| Seaborn | `pip install seaborn` |
-| Kagglehub | `pip install kagglehub[pandas-datasets]` |
-| Pandas | `pip install pandas` |
-
-> ⚠️ **Nota:** el paquete correcto en PyPI es `scikit-learn`, **no** `sklearn` (ese nombre está deprecado). Si usas `sklearn` en pip fallará la instalación.
+> El paquete de `scikit-learn` ya está incluido en el archivo de requisitos.
 
 ### 5. Correr el proyecto
 
@@ -85,11 +96,8 @@ deactivate
 ```
 
 ## Notas adicionales
-- Si usas macOS y `matplotlib` falla al abrir la ventana de gráficos, agrega esto al inicio del script:
-  ```python
-  import matplotlib
-  matplotlib.use('TkAgg')
-  ```
+- El script abre ventanas con las visualizaciones generadas; ciérralas para continuar con la siguiente gráfica.
+- En macOS, el script configura el backend `TkAgg` de Matplotlib. Si aparece un error relacionado con Tk, instala el soporte de Tkinter correspondiente a tu instalación de Python.
 - Recuerda no subir la carpeta `venv/` al repositorio. Agrégala a tu `.gitignore`:
   ```
   venv/
