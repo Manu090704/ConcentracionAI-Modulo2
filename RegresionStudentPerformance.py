@@ -25,6 +25,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, r2_score
 import matplotlib.pyplot as plt
 import seaborn as sns
+from sklearn import tree
 # %matplotlib inline
 
 """# Carga de datos"""
@@ -264,24 +265,21 @@ print(metrics_df)
 
 """# Modelo de predicción con Framework Versión 1"""
 
-dt_model = DecisionTreeRegressor(max_depth=3, random_state=42)
-
+dt_model = DecisionTreeRegressor(max_depth=4, min_samples_leaf=10, random_state=42)
 dt_model.fit(X_train_scaled, y_train)
 
 y_train_pred_dt = dt_model.predict(X_train_scaled)
 y_test_pred_dt = dt_model.predict(X_test_scaled)
 
+# Cálculo de métricas
 mse_train_dt = mean_squared_error(y_train, y_train_pred_dt)
 r2_train_dt = r2_score(y_train, y_train_pred_dt)
-
 mse_test_dt = mean_squared_error(y_test, y_test_pred_dt)
 r2_test_dt = r2_score(y_test, y_test_pred_dt)
 
-print("--- Decision Tree Regressor Performance ---")
-print(f"Training Mean Squared Error: {mse_train_dt:.2f}")
-print(f"Training R2 Score: {r2_train_dt:.2f}")
-print(f"Testing Mean Squared Error: {mse_test_dt:.2f}")
-print(f"Testing R2 Score: {r2_test_dt:.2f}")
+print("--- Decision Tree Regressor Performance (Ajustado) ---")
+print(f"Training MSE: {mse_train_dt:.2f}, R2: {r2_train_dt:.4f}")
+print(f"Testing MSE: {mse_test_dt:.2f}, R2: {r2_test_dt:.4f}")
 
 if r2_train_dt > r2_test_dt and abs(r2_train_dt - r2_test_dt) > 0.1:
     print("\nObservamos un posible *overfitting*! El modelo funciona mucho mejor en los datos de entrenamiento que en los datos de prueba.")
@@ -290,9 +288,13 @@ elif r2_train_dt < r2_test_dt:
 else:
     print("\nEl rendimiento del modelo en los conjuntos de entrenamiento y prueba es consistente.")
 
+
 """# Modelo de predicción con Framework Versión 2"""
 
-rf_model = RandomForestRegressor(max_depth=3,n_estimators=42, random_state=42)
+rf_model = RandomForestRegressor(n_estimators=150, 
+                                 max_depth=5,
+                                 max_leaf_nodes=10,
+                                 random_state=42)
 
 rf_model.fit(X_train_scaled, y_train)
 
@@ -317,4 +319,3 @@ elif r2_train_rf < r2_test_rf:
     print("\nEl rendimiento en el conjunto de prueba es incluso mejor que en el de entrenamiento, lo cual es inusual.")
 else:
     print("\nEl rendimiento del modelo en los conjuntos de entrenamiento y prueba es consistente.")
-
