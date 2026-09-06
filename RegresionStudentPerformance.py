@@ -149,8 +149,9 @@ data.drop(columns=['part_time_job','internet_access','extracurricular_activities
 
 """# Modelo de predicción a Mano"""
 
-X = data.iloc[:, :-1]
-y = data.iloc[:, -1]
+data_shuffled = data.sample(frac=1, random_state=42).reset_index(drop=True)
+X = data_shuffled.iloc[:, :-1]
+y = data_shuffled.iloc[:, -1]
 
 train_size = 600
 val_size = 200
@@ -265,21 +266,25 @@ print(metrics_df)
 
 """# Modelo de predicción con Framework Versión 1"""
 
-dt_model = DecisionTreeRegressor(max_depth=4, min_samples_leaf=10, random_state=42)
+dt_model = DecisionTreeRegressor(max_depth=20, random_state=42)
 dt_model.fit(X_train_scaled, y_train)
 
 y_train_pred_dt = dt_model.predict(X_train_scaled)
+y_val_pred_dt = dt_model.predict(X_val_scaled)
 y_test_pred_dt = dt_model.predict(X_test_scaled)
 
 # Cálculo de métricas
 mse_train_dt = mean_squared_error(y_train, y_train_pred_dt)
 r2_train_dt = r2_score(y_train, y_train_pred_dt)
+mse_val_dt = mean_squared_error(y_val, y_val_pred_dt)
+r2_val_dt = r2_score(y_val, y_val_pred_dt)
 mse_test_dt = mean_squared_error(y_test, y_test_pred_dt)
 r2_test_dt = r2_score(y_test, y_test_pred_dt)
 
 print("--- Decision Tree Regressor Performance (Ajustado) ---")
-print(f"Training MSE: {mse_train_dt:.2f}, R2: {r2_train_dt:.4f}")
-print(f"Testing MSE: {mse_test_dt:.2f}, R2: {r2_test_dt:.4f}")
+print(f"Training   MSE: {mse_train_dt:.2f}, R2: {r2_train_dt:.4f}")
+print(f"Validation MSE: {mse_val_dt:.2f}, R2: {r2_val_dt:.4f}")
+print(f"Testing    MSE: {mse_test_dt:.2f}, R2: {r2_test_dt:.4f}")
 
 if r2_train_dt > r2_test_dt and abs(r2_train_dt - r2_test_dt) > 0.1:
     print("\nObservamos un posible *overfitting*! El modelo funciona mucho mejor en los datos de entrenamiento que en los datos de prueba.")
@@ -291,27 +296,30 @@ else:
 
 """# Modelo de predicción con Framework Versión 2"""
 
-rf_model = RandomForestRegressor(n_estimators=150, 
-                                 max_depth=5,
-                                 max_leaf_nodes=10,
+rf_model = RandomForestRegressor(n_estimators=500, 
+                                 max_leaf_nodes=200, 
+                                 n_jobs=-1, 
                                  random_state=42)
 
 rf_model.fit(X_train_scaled, y_train)
 
 y_train_pred_rf = rf_model.predict(X_train_scaled)
+y_val_pred_rf = rf_model.predict(X_val_scaled)
 y_test_pred_rf = rf_model.predict(X_test_scaled)
 
 mse_train_rf = mean_squared_error(y_train, y_train_pred_rf)
 r2_train_rf = r2_score(y_train, y_train_pred_rf)
 
+mse_val_rf = mean_squared_error(y_val, y_val_pred_rf)
+r2_val_rf = r2_score(y_val, y_val_pred_rf)
+
 mse_test_rf = mean_squared_error(y_test, y_test_pred_rf)
 r2_test_rf = r2_score(y_test, y_test_pred_rf)
 
 print("--- Random Forest Regressor Performance ---")
-print(f"Training Mean Squared Error: {mse_train_rf:.2f}")
-print(f"Training R2 Score: {r2_train_rf:.2f}")
-print(f"Testing Mean Squared Error: {mse_test_rf:.2f}")
-print(f"Testing R2 Score: {r2_test_rf:.2f}")
+print(f"Training   MSE: {mse_train_rf:.2f}, R2: {r2_train_rf:.4f}")
+print(f"Validation MSE: {mse_val_rf:.2f}, R2: {r2_val_rf:.4f}")
+print(f"Testing    MSE: {mse_test_rf:.2f}, R2: {r2_test_rf:.4f}")
 
 if r2_train_rf > r2_test_rf and abs(r2_train_rf - r2_test_rf) > 0.1:
     print("\nObservamos un posible *overfitting*! El modelo funciona mucho mejor en los datos de entrenamiento que en los datos de prueba.")
