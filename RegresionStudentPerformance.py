@@ -178,7 +178,7 @@ def hypothesis(theta, x ,b):
 
 ## MSE
 def cost(y_predict, y):
-  return np.sum((y_predict - y)**2)/(len(y))
+  return np.sum((y_predict - y)**2)/(2*len(y))
 
 ## R^2
 def r2_score(y_predict, y):
