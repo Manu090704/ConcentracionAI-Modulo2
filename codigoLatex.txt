@@ -589,6 +589,13 @@ Majdalani, J. (2024, septiembre 16).
 El Independiente.
 \url{https://www.elindependiente.com/tendencias/2024/09/16/es-malo-dormir-mas-8-horas-expertos/}
 
+\bibitem{AprendeIA2019}
+AprendeIA con Ligdi Gonzalez. (2019, marzo 1).
+\textit{Árboles de Decisión Regresión - Teoría | \#24 Curso Machine Learning con Python} [Vídeo].
+YouTube.
+\url{https://www.youtube.com/watch?v=gP2X8a3LaTM}
+
+
 \end{thebibliography}
 
 \end{document}

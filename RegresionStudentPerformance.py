@@ -187,7 +187,7 @@ def r2_score(y_predict, y):
     return 1 - (ss_res/ss_tot)
 
 #Gradient Descent
-def optimization(X, y, theta, b, alpha, num_iters=None):
+def optimization(X, y, theta, b, alpha):
     m = len(y)
     y_pred = hypothesis(theta, X, b)
     error = (y_pred - y)
