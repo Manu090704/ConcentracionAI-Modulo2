@@ -354,6 +354,12 @@ En este experimento, el algoritmo alcanzó el máximo de 5,000 épocas sin llega
 R^2_{\mathrm{train}} \approx 0.666.
 \end{equation}
 
+En los conjuntos de validación y prueba, el modelo obtuvo los siguientes valores de $R^2$:
+
+\begin{equation}
+R^2_{\mathrm{val}} = 0.6320, \qquad R^2_{\mathrm{test}} = 0.6455.
+\end{equation}
+
 \begin{figure}[b]
     \centering
     \includegraphics[width=0.5\textwidth]{R2.png}
@@ -555,15 +561,17 @@ modelos sobre el conjunto de prueba.
 \caption{Resumen del $R^2$ de prueba obtenido por cada modelo}
 \label{tab:resumen_final}
 \centering
-\begin{tabular}{lc}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lccc}
 \hline
-\textbf{Modelo} & \textbf{$R^2$ prueba} \\
+\textbf{Modelo} & \textbf{$R^2$ prueba} & \textbf{$R^2$ validación} & \textbf{$R^2$ entrenamiento} \\
 \hline
-Regresión lineal (manual, gradiente descendiente) & 0.6455 \\
-Árbol de decisión (Scikit-learn)                   & 0.1705 \\
-Random Forest (Scikit-learn, 500 árboles)          & 0.3451 \\
+Regresión lineal (manual, gradiente descendiente) & 0.6455 & 0.6320 & 0.6656 \\
+Árbol de decisión (Scikit-learn)                   & 0.1705 & -0.0025 & 1.0000 \\
+Random Forest (Scikit-learn, 500 árboles)          & 0.3451 & 0.0601 & 0.9173 \\
 \hline
 \end{tabular}
+}
 \end{table}
 
 En conclusión, el experimento muestra que la implementación manual de un algoritmo de regresión lineal permite comprender con mayor profundidad el proceso de optimización, y en este caso particular obtuvo el mejor desempeño sobre datos no vistos entre los tres modelos evaluados. Los modelos basados en árboles, si bien poseen una mayor capacidad para representar relaciones no lineales, resultaron más propensos al sobreajuste bajo la configuración de hiperparámetros utilizada; el Random Forest logró mitigar parcialmente este problema respecto al árbol individual, pero no logró superar al modelo lineal. Esto ilustra que un modelo con mayor capacidad de representación no necesariamente generaliza mejor, dependiendo de los patrones de los datos un modelo complejo puede no ser la mejor solución al problema.
